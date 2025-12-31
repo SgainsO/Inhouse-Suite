@@ -1,0 +1,48 @@
+import type { Metadata } from "next";
+import '@mantine/core/styles.css';
+import { Geist, Geist_Mono } from "next/font/google";
+import NavbarSimple from './components/Navbar/Navbar';
+import { ColorSchemeScript, MantineProvider, mantineHtmlProps } from '@mantine/core';
+
+
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "DGG CRM",
+  description: "Volunteer Console CRM",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en" {...mantineHtmlProps}>
+          <head>
+            <ColorSchemeScript />
+          </head>
+
+          <body>
+            <MantineProvider>
+            <div style={{ display: 'flex' }}>
+              <NavbarSimple />
+              <main style={{ flex: 1, padding: '20px' }}>
+                {children}
+              </main>
+            </div>
+        </MantineProvider>
+      </body>
+
+    </html>
+  );
+}
