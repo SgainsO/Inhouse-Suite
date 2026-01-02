@@ -8,10 +8,12 @@ import {
   Paper,
   TextInput,
   Select,
-  Stack
+  Stack,
+  Modal
 } from '@mantine/core';
 import { IconPlus, IconFileUpload, IconSearch } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
+import { useForm } from '@mantine/form';
 import PeopleTable, { type Person, type Group as PersonGroup, type Tag } from '@/components/PeopleTable';
 import './page.css';
 
@@ -26,7 +28,23 @@ export default function PeoplePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const itemsPerPage = 20;
+
+  const form = useForm({
+    initialValues: {
+      did: '',
+      name: '',
+      email: '',
+      phone: ''
+    },
+    validate: {
+      did: (value) => (!value ? 'Discord ID is required' : null),
+      name: (value) => (!value ? 'Name is required' : null),
+      email: (value) => (value && !/^\S+@\S+$/.test(value) ? 'Invalid email' : null)
+    }
+  });
 
   // Fetch groups and tags on component mount
   useEffect(() => {
@@ -98,8 +116,34 @@ export default function PeoplePage() {
   };
 
   const handleAddPerson = () => {
-    // TODO: Open add person modal or navigate to add person page
-    console.log('Add person clicked');
+    form.reset();
+    setAddModalOpen(true);
+  };
+
+  const handleSubmitPerson = async (values: typeof form.values) => {
+    setSubmitting(true);
+    try {
+      const response = await fetch('http://127.0.0.1:8080/api/people/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create person');
+      }
+
+      setAddModalOpen(false);
+      form.reset();
+      fetchPeople();
+    } catch (error) {
+      console.error('Error creating person:', error);
+      alert('Failed to create person. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleUploadCSV = () => {
@@ -136,13 +180,13 @@ export default function PeoplePage() {
             >
               Add person
             </Button>
-            <Button
+      {/*      <Button
               variant="outline"
               leftSection={<IconFileUpload size={16} />}
               onClick={handleUploadCSV}
             >
               Upload CSV
-            </Button>
+            </Button> */}
           </Group>
         </Group>
 
@@ -199,6 +243,50 @@ export default function PeoplePage() {
           </Group>
         </Paper>
       </Stack>
+
+      {/* Add Person Modal */}
+      <Modal
+        opened={addModalOpen}
+        onClose={() => setAddModalOpen(false)}
+        title="Add New Person"
+        size="md"
+      >
+        <form onSubmit={form.onSubmit(handleSubmitPerson)}>
+          <Stack gap="md">
+            <TextInput
+              label="Discord ID"
+              placeholder="Enter Discord ID"
+              required
+              {...form.getInputProps('did')}
+            />
+            <TextInput
+              label="Name"
+              placeholder="Enter name"
+              required
+              {...form.getInputProps('name')}
+            />
+            <TextInput
+              label="Email"
+              placeholder="Enter email (optional)"
+              type="email"
+              {...form.getInputProps('email')}
+            />
+            <TextInput
+              label="Phone"
+              placeholder="Enter phone number (optional)"
+              {...form.getInputProps('phone')}
+            />
+            <Group justify="flex-end" mt="md">
+              <Button variant="outline" onClick={() => setAddModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={submitting}>
+                Add Person
+              </Button>
+            </Group>
+          </Stack>
+        </form>
+      </Modal>
     </Container>
   );
 }

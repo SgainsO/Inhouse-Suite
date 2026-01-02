@@ -142,6 +142,68 @@ class TagViewSet(viewsets.ModelViewSet):
         print('Tags data:', serializer.data)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['get'], url_path='acceptance-stats')
+    def acceptance_stats(self, request, pk=None):
+        """
+        GET /api/tags/{tid}/acceptance-stats/
+        Returns acceptance statistics for reaches by people with this tag
+        """
+        tag = self.get_object()
+
+        # Get all people with this tag
+        people_with_tag = AssignedTag.objects.filter(tag=tag).values_list('person', flat=True)
+
+        # Get all volunteer responses for these people
+        responses = VolunteerResponse.objects.filter(
+            did__in=people_with_tag
+        ).select_related('rid')
+
+        # Calculate overall stats
+        total_responses = responses.count()
+        if total_responses == 0:
+            return Response({
+                'tag_id': tag.tid,
+                'tag_name': tag.name,
+                'overall': {'accepted': 0, 'total': 0, 'percentage': 0},
+                'by_type': []
+            })
+
+        accepted_responses = responses.filter(response=1).count()
+        overall_percentage = (accepted_responses / total_responses * 100) if total_responses > 0 else 0
+
+        # Calculate stats by reach type
+        stats_by_type = {}
+        for response in responses:
+            reach_type = response.rid.type
+            if reach_type not in stats_by_type:
+                stats_by_type[reach_type] = {'accepted': 0, 'total': 0}
+
+            stats_by_type[reach_type]['total'] += 1
+            if response.response == 1:
+                stats_by_type[reach_type]['accepted'] += 1
+
+        # Format by_type stats
+        by_type_list = [
+            {
+                'type': reach_type,
+                'accepted': stats['accepted'],
+                'total': stats['total'],
+                'percentage': (stats['accepted'] / stats['total'] * 100) if stats['total'] > 0 else 0
+            }
+            for reach_type, stats in stats_by_type.items()
+        ]
+
+        return Response({
+            'tag_id': tag.tid,
+            'tag_name': tag.name,
+            'overall': {
+                'accepted': accepted_responses,
+                'total': total_responses,
+                'percentage': round(overall_percentage, 1)
+            },
+            'by_type': by_type_list
+        })
+
 
 
 class AssignedTagViewSet(viewsets.ModelViewSet):

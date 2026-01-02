@@ -1,6 +1,7 @@
 'use client';
 
-import { Table, Badge, Stack, Title, LoadingOverlay, Paper, Group, Text, Pagination, Center } from '@mantine/core';
+import { Table, Badge, Stack, Title, LoadingOverlay, Paper, Group, Text, Pagination, Center, HoverCard } from '@mantine/core';
+import { useState } from 'react';
 
 export interface Person {
   did: string;
@@ -30,6 +31,90 @@ interface PeopleTableProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+}
+
+interface AcceptanceStats {
+  tag_id: number;
+  tag_name: string;
+  overall: {
+    accepted: number;
+    total: number;
+    percentage: number;
+  };
+  by_type: Array<{
+    type: string;
+    accepted: number;
+    total: number;
+    percentage: number;
+  }>;
+}
+
+function TagWithStats({ tag }: { tag: Tag }) {
+  const [stats, setStats] = useState<AcceptanceStats | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [opened, setOpened] = useState(false);
+
+  const fetchStats = async () => {
+    if (stats) return; // Already fetched
+    setLoading(true);
+    try {
+      const response = await fetch(`http://127.0.0.1:8080/api/tags/${tag.tid}/acceptance-stats/`);
+      const data = await response.json();
+      setStats(data);
+    } catch (error) {
+      console.error('Error fetching tag stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <HoverCard
+      width={280}
+      shadow="md"
+      opened={opened}
+      onOpen={() => {
+        setOpened(true);
+        fetchStats();
+      }}
+      onClose={() => setOpened(false)}
+    >
+      <HoverCard.Target>
+        <Badge variant="dot" size="sm" style={{ cursor: 'pointer' }}>
+          {tag.name}
+        </Badge>
+      </HoverCard.Target>
+      <HoverCard.Dropdown>
+        <Stack gap="xs">
+          <Text size="sm" fw={500}>{tag.name} - Acceptance Stats</Text>
+          {loading ? (
+            <Text size="xs" c="dimmed">Loading...</Text>
+          ) : stats ? (
+            <>
+              <div>
+                <Text size="xs" fw={500}>Overall</Text>
+                <Text size="xs" c="dimmed">
+                  {stats.overall.percentage}% accepted ({stats.overall.accepted}/{stats.overall.total})
+                </Text>
+              </div>
+              {stats.by_type.length > 0 && (
+                <div>
+                  <Text size="xs" fw={500} mt="xs">By Reach Type</Text>
+                  {stats.by_type.map((typeStat) => (
+                    <Text key={typeStat.type} size="xs" c="dimmed">
+                      {typeStat.type}: {typeStat.percentage.toFixed(1)}% ({typeStat.accepted}/{typeStat.total})
+                    </Text>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <Text size="xs" c="dimmed">No data available</Text>
+          )}
+        </Stack>
+      </HoverCard.Dropdown>
+    </HoverCard>
+  );
 }
 
 export default function PeopleTable({
@@ -106,9 +191,7 @@ export default function PeopleTable({
                     {person.tags && person.tags.length > 0 ? (
                       <Group gap="xs">
                         {person.tags.slice(0, 3).map((tag) => (
-                          <Badge key={tag.tid} variant="dot" size="sm">
-                            {tag.name}
-                          </Badge>
+                          <TagWithStats key={tag.tid} tag={tag} />
                         ))}
                         {person.tags.length > 3 && (
                           <Badge variant="dot" size="sm" c="dimmed">

@@ -40,7 +40,7 @@ class VolunteerResponse(models.Model):
     """
     id = models.AutoField(primary_key=True)
     did = models.CharField(max_length=255)
-    rid = models.IntegerField()
+    rid = models.ForeignKey('Reach', on_delete=models.CASCADE, db_column='rid')
     response = models.IntegerField(choices=[
         (1, 'Accepted'),
         (0, 'Declined'),
