@@ -14,6 +14,8 @@ router.register(r'assigned-tags', views.AssignedTagViewSet)
 router.register(r'reaches', views.ReachViewSet)
 router.register(r'volunteer-responses', views.VolunteerResponseViewSet)
 
+
 urlpatterns = [
     path('api/', include(router.urls)),
+    path('', views.is_up, name="default")
 ]

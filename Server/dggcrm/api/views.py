@@ -1,5 +1,5 @@
 from rest_framework.response import Response  # Fix import
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework import viewsets, status
 from django.db.models import Q
 from base.models import (
@@ -8,17 +8,81 @@ from base.models import (
     Reach, VolunteerResponse, GeneralRole
 )
 from .serializer import (
-    PersonSerializer, GroupSerializer, EventSerializer,
+    PersonSerializer, PersonWithRelationsSerializer, GroupSerializer, EventSerializer,
     VolunteerInGroupSerializer, TagSerializer, AssignedTagSerializer,
     EventParticipantSerializer, ReachSerializer, VolunteerResponseSerializer,
     GeneralRoleSerializer
 )
 
 
+@api_view(['GET'])
+def is_up(request):
+    return Response({"Server": "Up"}, status=200)
+
 class PersonViewSet(viewsets.ModelViewSet):
     paginate_by=10
     queryset = Person.objects.all()
     serializer_class = PersonSerializer
+
+    @action(detail=False, methods=['get'], url_path='with-relations')
+    def with_relations(self, request):
+        """
+        GET /api/people/with-relations/?search=query&group=gid&tag=tid&page=1&page_size=20
+        Returns people with their groups and tags, with optional filtering
+        """
+        # Get query parameters
+        search_query = request.query_params.get('search', '')
+        group_filter = request.query_params.get('group', '')
+        tag_filter = request.query_params.get('tag', '')
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 20))
+
+        # Start with optimized queryset
+        queryset = Person.objects.prefetch_related(
+            'volunteeringroup_set__group',
+            'assignedtag_set__tag'
+        )
+
+        # Apply search filter
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(did__icontains=search_query) |
+                Q(phone__icontains=search_query)
+            )
+
+        # Apply group filter
+        if group_filter and group_filter != 'all':
+            queryset = queryset.filter(
+                volunteeringroup__group__gid=group_filter
+            ).distinct()
+
+        # Apply tag filter
+        if tag_filter and tag_filter != 'all':
+            queryset = queryset.filter(
+                assignedtag__tag__tid=tag_filter
+            ).distinct()
+
+        # Get total count before pagination
+        total_count = queryset.count()
+
+        # Apply pagination
+        start_index = (page - 1) * page_size
+        end_index = start_index + page_size
+        paginated_queryset = queryset[start_index:end_index]
+
+        # Serialize
+        serializer = PersonWithRelationsSerializer(paginated_queryset, many=True)
+
+        # Return with pagination metadata
+        return Response({
+            'results': serializer.data,
+            'count': total_count,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': (total_count + page_size - 1) // page_size
+        })
 
     @action(detail=False, methods=['get'], url_path='search')
     def search(self, request):
@@ -40,6 +104,12 @@ class PersonViewSet(viewsets.ModelViewSet):
 class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
+
+    def list(self, request):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        print('Groups data:', serializer.data)
+        return Response(serializer.data)
 
 
 class VolunteerInGroupViewSet(viewsets.ModelViewSet):
@@ -65,6 +135,13 @@ class EventParticipantViewSet(viewsets.ModelViewSet):
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+
+    def list(self, request):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        print('Tags data:', serializer.data)
+        return Response(serializer.data)
+
 
 
 class AssignedTagViewSet(viewsets.ModelViewSet):

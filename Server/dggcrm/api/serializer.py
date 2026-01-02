@@ -6,6 +6,44 @@ class PersonSerializer(serializers.ModelSerializer):
         model = Person
         fields = '__all__'
 
+class GroupWithAccessSerializer(serializers.Serializer):
+    """Serializer for groups with access level included"""
+    gid = serializers.IntegerField()
+    name = serializers.CharField()
+    access_level = serializers.IntegerField()
+
+class PersonWithRelationsSerializer(serializers.ModelSerializer):
+    """Serializer for Person with related groups and tags"""
+    groups = serializers.SerializerMethodField()
+    tags = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Person
+        fields = ['did', 'name', 'email', 'phone', 'groups', 'tags']
+
+    def get_groups(self, obj):
+        """Get groups with access levels for this person"""
+        volunteer_groups = VolunteerInGroup.objects.filter(person=obj).select_related('group')
+        return [
+            {
+                'gid': vg.group.gid,
+                'name': vg.group.name,
+                'access_level': vg.access_level
+            }
+            for vg in volunteer_groups
+        ]
+
+    def get_tags(self, obj):
+        """Get tags for this person"""
+        assigned_tags = AssignedTag.objects.filter(person=obj).select_related('tag')
+        return [
+            {
+                'tid': at.tag.tid,
+                'name': at.tag.name
+            }
+            for at in assigned_tags
+        ]
+
 class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group

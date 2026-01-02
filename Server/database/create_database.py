@@ -14,15 +14,18 @@ def create_database():
               (gid INTEGER PRIMARY KEY AUTOINCREMENT,
                name TEXT NOT NULL)''')
     c.execute('''CREATE TABLE IF NOT EXISTS VolunteerInGroups
-              (did TEXT  NOT NULL,
+              (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               did TEXT  NOT NULL,
                gid INTEGER,
                access_level INT NOT NULL,
-               PRIMARY KEY (did, gid),
                FOREIGN KEY (did) REFERENCES People(did),
                FOREIGN KEY (gid) REFERENCES Groups(gid))''') #access 1 = view, 2 = edit
     c.execute('''CREATE TABLE IF NOT EXISTS General_Role
-              (did TEXT NOT NULL,
-              access_level INT NOT NULL 
+              (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               did TEXT NOT NULL,
+               access_level INT NOT NULL
               )''') #0 Needs approval, 1 normal organizer, 2 admin
     c.execute('''CREATE TABLE IF NOT EXISTS Event
               (eid INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,18 +36,20 @@ def create_database():
                group_id INTEGER,
                FOREIGN KEY (group_id) REFERENCES Groups(gid))''')
     c.execute('''CREATE TABLE IF NOT EXISTS EventParticipants
-              (eid INTEGER NOT NULL,
+              (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               eid INTEGER NOT NULL,
                did TEXT NOT NULL,
-               PRIMARY KEY (eid, did),
                FOREIGN KEY (eid) REFERENCES Event(eid),
                FOREIGN KEY (did) REFERENCES People(did))''')
     c.execute('''CREATE TABLE  IF NOT EXISTS Tags
               (tid INTEGER PRIMARY KEY AUTOINCREMENT,
                name TEXT NOT NULL)''')
     c.execute('''CREATE TABLE IF NOT EXISTS AssignedTags
-              (did TEXT NOT NULL,
+              (
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               did TEXT NOT NULL,
                tid INTEGER NOT NULL,
-               PRIMARY KEY (did, tid),
                FOREIGN KEY (did) REFERENCES People(did),
                FOREIGN KEY (tid) REFERENCES Tags(tid))''')
     c.execute('''CREATE TABLE IF NOT EXISTS Reaches(
