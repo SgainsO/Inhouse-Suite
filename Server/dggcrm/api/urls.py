@@ -5,7 +5,7 @@ from . import views
 router = DefaultRouter()
 router.register(r'people', views.PersonViewSet)
 router.register(r'groups', views.GroupViewSet)
-router.register(r'volunteers-in-groups', views.VolunteerInGroupViewSet)
+router.register(r'volunteer-in-groups', views.VolunteerInGroupViewSet)
 router.register(r'general-roles', views.GeneralRoleViewSet)
 router.register(r'events', views.EventViewSet)
 router.register(r'event-participants', views.EventParticipantViewSet)

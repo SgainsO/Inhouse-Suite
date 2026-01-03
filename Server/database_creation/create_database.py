@@ -20,7 +20,7 @@ def create_database():
                gid INTEGER,
                access_level INT NOT NULL,
                FOREIGN KEY (did) REFERENCES People(did),
-               FOREIGN KEY (gid) REFERENCES Groups(gid))''') #access 1 = view, 2 = edit
+               FOREIGN KEY (gid) REFERENCES Groups(gid))''') #access_level 0 = view, 1 = edit
     c.execute('''CREATE TABLE IF NOT EXISTS General_Role
               (
                id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -117,7 +117,7 @@ def populate_with_fake_data(num_people=50, num_groups=5, num_events=15, num_reac
         num_groups_to_join = random.randint(0, min(3, len(group_ids)))
         selected_groups = random.sample(group_ids, num_groups_to_join)
         for gid in selected_groups:
-            access_level = random.choice([1, 2])  # 1 = view, 2 = edit
+            access_level = random.choice([0, 1])  # 1 = view, 2 = edit
             c.execute('INSERT OR IGNORE INTO VolunteerInGroups (did, gid, access_level) VALUES (?, ?, ?)',
                       (did, gid, access_level))
     conn.commit()
@@ -154,7 +154,7 @@ def populate_with_fake_data(num_people=50, num_groups=5, num_events=15, num_reac
     # Assign Tags to People
     for did in people_dids:
         # Each person gets 1-3 random tags
-        num_tags = random.randint(1, min(3, len(tag_ids)))
+        num_tags = random.randint(0, min(2, len(tag_ids)))
         selected_tags = random.sample(tag_ids, num_tags)
         for tid in selected_tags:
             c.execute('INSERT OR IGNORE INTO AssignedTags (did, tid) VALUES (?, ?)', (did, tid))

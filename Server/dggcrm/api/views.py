@@ -112,6 +112,73 @@ class GroupViewSet(viewsets.ModelViewSet):
         print('Groups data:', serializer.data)
         return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], url_path='with-counts')
+    def with_counts(self, request):
+        """
+        GET /api/groups/with-counts/?page=1&page_size=20
+        Returns groups with aggregated member_count and event_count (paginated)
+        """
+        from django.db.models import Count
+
+        # Get pagination parameters
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 20))
+
+        groups = Group.objects.annotate(
+            member_count=Count('volunteeringroup', distinct=True),
+            event_count=Count('event', distinct=True)
+        )
+
+        # Get total count
+        total_count = groups.count()
+
+        # Apply pagination
+        start_index = (page - 1) * page_size
+        end_index = start_index + page_size
+        paginated_groups = groups[start_index:end_index]
+
+        # Manually serialize to include counts
+        data = []
+        for group in paginated_groups:
+            data.append({
+                'gid': group.gid,
+                'name': group.name,
+                'member_count': group.member_count,
+                'event_count': group.event_count
+            })
+
+        return Response({
+            'results': data,
+            'count': total_count,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': (total_count + page_size - 1) // page_size
+        })
+
+    @action(detail=True, methods=['get'], url_path='members')
+    def members(self, request, pk=None):
+        """
+        GET /api/groups/{gid}/members/
+        Returns all members of a specific group with their access levels
+        """
+        group = self.get_object()
+        memberships = VolunteerInGroup.objects.filter(group=group).select_related('person')
+
+        # Serialize member data
+        data = []
+        for membership in memberships:
+            data.append({
+                'id': membership.id,  # VolunteerInGroup ID for PATCH/DELETE
+                'did': membership.person.did,
+                'name': membership.person.name,
+                'email': membership.person.email,
+                'phone': membership.person.phone,
+                'access_level': membership.access_level,
+                'group': group.gid
+            })
+
+        return Response(data)
+
 
 class VolunteerInGroupViewSet(viewsets.ModelViewSet):
     queryset = VolunteerInGroup.objects.all()
