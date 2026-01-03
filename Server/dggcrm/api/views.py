@@ -8,7 +8,8 @@ from base.models import (
     Reach, VolunteerResponse, GeneralRole
 )
 from .serializer import (
-    PersonSerializer, PersonWithRelationsSerializer, GroupSerializer, EventSerializer,
+    PersonSerializer, PersonWithRelationsSerializer, GroupSerializer,
+    EventSerializer, EventWithParticipantsSerializer,
     VolunteerInGroupSerializer, TagSerializer, AssignedTagSerializer,
     EventParticipantSerializer, ReachSerializer, VolunteerResponseSerializer,
     GeneralRoleSerializer
@@ -125,6 +126,70 @@ class GeneralRoleViewSet(viewsets.ModelViewSet):
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
+
+    @action(detail=False, methods=['get'], url_path='with-participants')
+    def with_participants(self, request):
+        """
+        GET /api/events/with-participants/?search=query&group=gid&date_filter=upcoming|past|all&page=1&page_size=20
+        Returns events with their participants, with optional filtering
+        """
+        # Get query parameters
+        search_query = request.query_params.get('search', '')
+        group_filter = request.query_params.get('group', '')
+        date_filter = request.query_params.get('date_filter', 'all')
+        page = int(request.query_params.get('page', 1))
+        page_size = int(request.query_params.get('page_size', 20))
+
+        # Start with optimized queryset
+        queryset = Event.objects.select_related('group_id').prefetch_related(
+            'eventparticipant_set__person'
+        )
+
+        # Apply search filter
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(description__icontains=search_query) |
+                Q(location__icontains=search_query)
+            )
+
+        # Apply group filter
+        if group_filter and group_filter != 'all':
+            queryset = queryset.filter(group__gid=group_filter)
+
+        # Apply date filter (if date is stored as ISO string, we can do basic comparison)
+        # Note: This is simplified - you might want to improve date filtering
+        if date_filter == 'upcoming':
+            from datetime import datetime
+            today = datetime.now().isoformat()
+            queryset = queryset.filter(date__gte=today)
+        elif date_filter == 'past':
+            from datetime import datetime
+            today = datetime.now().isoformat()
+            queryset = queryset.filter(date__lt=today)
+
+        # Order by date (newest first)
+        queryset = queryset.order_by('-date')
+
+        # Get total count before pagination
+        total_count = queryset.count()
+
+        # Apply pagination
+        start_index = (page - 1) * page_size
+        end_index = start_index + page_size
+        paginated_queryset = queryset[start_index:end_index]
+
+        # Serialize
+        serializer = EventWithParticipantsSerializer(paginated_queryset, many=True)
+
+        # Return with pagination metadata
+        return Response({
+            'results': serializer.data,
+            'count': total_count,
+            'page': page,
+            'page_size': page_size,
+            'total_pages': (total_count + page_size - 1) // page_size
+        })
 
 
 class EventParticipantViewSet(viewsets.ModelViewSet):

@@ -61,8 +61,7 @@ def create_database():
               type TEXT NOT NULL,
               priority INTEGER NOT NULL,
               FOREIGN KEY (assigned) REFERENCES People(did))''') # type = asset, sof_dev, ally-reach
-    c.execute('''CREATE TABLE IF NOT EXISTS 
-              (
+    c.execute('''CREATE TABLE IF NOT EXISTS VolunteerResponses(
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               rid INTEGER NOT NULL,
               did TEXT NOT NULL,

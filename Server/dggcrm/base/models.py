@@ -115,7 +115,7 @@ class Event(models.Model):
     description = models.TextField(blank=True, null=True)
     date = models.CharField(max_length=255, blank=True, null=True)  # Stored as ISO string
     location = models.TextField(blank=True, null=True)
-    group = models.ForeignKey(Group, on_delete=models.CASCADE, db_column='group')
+    group_id = models.ForeignKey(Group, on_delete=models.CASCADE, db_column='group_id')
 
     class Meta:
         db_table = 'Event'

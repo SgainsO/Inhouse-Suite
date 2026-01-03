@@ -54,6 +54,37 @@ class EventSerializer(serializers.ModelSerializer):
         model = Event
         fields = '__all__'
 
+class EventWithParticipantsSerializer(serializers.ModelSerializer):
+    """Serializer for Event with participant details and group info"""
+    participants = serializers.SerializerMethodField()
+    group_name = serializers.SerializerMethodField()
+    participant_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Event
+        fields = ['eid', 'name', 'description', 'date', 'location', 'group_id', 'group_name', 'participants', 'participant_count']
+
+    def get_group_name(self, obj):
+        """Get the group name"""
+        return obj.group_id.name if obj.group_id else None
+
+    def get_participants(self, obj):
+        """Get participants for this event"""
+        event_participants = EventParticipant.objects.filter(event=obj).select_related('person')
+        return [
+            {
+                'did': ep.person.did,
+                'name': ep.person.name,
+                'email': ep.person.email,
+                'phone': ep.person.phone
+            }
+            for ep in event_participants
+        ]
+
+    def get_participant_count(self, obj):
+        """Get count of participants"""
+        return EventParticipant.objects.filter(event=obj).count()
+
 class VolunteerInGroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = VolunteerInGroup

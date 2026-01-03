@@ -18,12 +18,11 @@ import classes from './Navbar.module.css';
 
 const data = [
   { link: '/home', label: 'Home', icon: IconHome },
-  { link: '/about', label: 'About', icon: IconInfoCircle },
   { link: '/calls', label: 'Calls', icon: IconPhone },
   { link: '/people', label: 'People', icon: IconUsers },
   { link: '/events', label: 'Events', icon: IconCalendarEvent },
   { link: '/orgs', label: 'Orgs', icon: IconBuilding },
-  { link: '/profile', label: 'Profile', icon: IconUser },
+/*  { link: '/profile', label: 'Profile', icon: IconUser }, */
 ];
 
 export default function NavbarSimple() {
