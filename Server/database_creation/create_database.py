@@ -196,6 +196,15 @@ if __name__ == '__main__':
     create_database()
     print("Database schema created successfully!")
 
-    # Populate with fake data
-    populate_with_fake_data(num_people=50, num_groups=5, num_events=15, num_reaches=20)
+    ans = input('Y if add fake data, N if only database creation')
+    end = False
+    while not end:
+        if ans.lower() == 'y':
+            populate_with_fake_data(num_people=50, num_groups=5, num_events=15, num_reaches=20)
+            end = True
+        elif ans.lower() == 'n':
+            end = True
+        else:
+            ans = input('Invalid input. Please enter Y or N: ')
+
     print("Database ready for testing!")

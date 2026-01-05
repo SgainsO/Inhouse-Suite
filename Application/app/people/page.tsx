@@ -9,7 +9,8 @@ import {
   TextInput,
   Select,
   Stack,
-  Modal
+  Modal,
+  MultiSelect
 } from '@mantine/core';
 import { IconPlus, IconFileUpload, IconSearch } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
@@ -30,6 +31,7 @@ export default function PeoplePage() {
   const [totalCount, setTotalCount] = useState(0);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const itemsPerPage = 20;
 
   const form = useForm({
@@ -37,7 +39,8 @@ export default function PeoplePage() {
       did: '',
       name: '',
       email: '',
-      phone: ''
+      phone: '',
+      tags: []
     },
     validate: {
       did: (value) => (!value ? 'Discord ID is required' : null),
@@ -45,6 +48,8 @@ export default function PeoplePage() {
       email: (value) => (value && !/^\S+@\S+$/.test(value) ? 'Invalid email' : null)
     }
   });
+
+
 
   // Fetch groups and tags on component mount
   useEffect(() => {
@@ -117,19 +122,27 @@ export default function PeoplePage() {
 
   const handleAddPerson = () => {
     form.reset();
+    setSelectedTags([]);
     setAddModalOpen(true);
   };
 
   const handleSubmitPerson = async (values: typeof form.values) => {
     setSubmitting(true);
     try {
-      const response = await fetch('/api/people/', {
+      // Include selectedTags in the submission
+      const personData = {
+        ...values,
+        tags: selectedTags
+      };
+
+      const response = await fetch('/api/people/person-and-tags/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(personData),
       });
+
 
       if (!response.ok) {
         throw new Error('Failed to create person');
@@ -137,6 +150,7 @@ export default function PeoplePage() {
 
       setAddModalOpen(false);
       form.reset();
+      setSelectedTags([]);
       fetchPeople();
     } catch (error) {
       console.error('Error creating person:', error);
@@ -276,6 +290,17 @@ export default function PeoplePage() {
               placeholder="Enter phone number (optional)"
               {...form.getInputProps('phone')}
             />
+
+            <MultiSelect
+              label="Tags"
+              placeholder="Select tags"
+              value={selectedTags}
+              onChange={(value) => setSelectedTags(value || [])}
+              data={tags.map(t => ({ value: t.name, label: t.name }))}
+              searchable
+              clearable
+            />
+
             <Group justify="flex-end" mt="md">
               <Button variant="outline" onClick={() => setAddModalOpen(false)}>
                 Cancel

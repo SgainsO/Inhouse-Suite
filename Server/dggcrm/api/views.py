@@ -100,6 +100,39 @@ class PersonViewSet(viewsets.ModelViewSet):
 
         serializer = PersonSerializer(people[:20], many=True)  # Limit to 20 results
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['post'], url_path='person-and-tags')
+    def groups_and_tags(self, request, pk=None):
+        """POST /api/people/person-and-tags/ - Creates or updates a person with tags"""
+
+        data = request.data
+        print("data:", data)
+
+        # Get or create the person
+        person, created = Person.objects.get_or_create(
+            did=data.get('did'),
+            defaults={
+                'name': data.get('name'),
+                'email': data.get('email'),
+                'phone': data.get('phone')
+            }
+        )
+
+        # If person already exists, update their info
+        if not created:
+            person.name = data.get('name')
+            person.email = data.get('email')
+            person.phone = data.get('phone')
+            person.save()
+
+        # Clear existing tags and add new ones
+        AssignedTag.objects.filter(person=person).delete()
+        for tagNames in data.get('tags', []):
+            tag = Tag.objects.get(name=tagNames)
+            newDetail = AssignedTag(person=person, tag=tag)
+            newDetail.save()
+
+        return Response(status=204)
 
 
 class GroupViewSet(viewsets.ModelViewSet):
