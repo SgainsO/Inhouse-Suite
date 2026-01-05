@@ -34,22 +34,15 @@ interface PeopleTableProps {
 }
 
 interface AcceptanceStats {
-  tag_id: number;
-  tag_name: string;
-  overall: {
-    accepted: number;
-    total: number;
-    percentage: number;
-  };
-  by_type: Array<{
-    type: string;
-    accepted: number;
-    total: number;
-    percentage: number;
-  }>;
+  person_did: string;
+  person_name: string;
+  accepted: number;
+  rejected: number;
+  total: number;
+  acceptance_percentage: number;
 }
 
-function TagWithStats({ tag }: { tag: Tag }) {
+function TagWithStats({ tag, personDid }: { tag: Tag; personDid: string }) {
   const [stats, setStats] = useState<AcceptanceStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [opened, setOpened] = useState(false);
@@ -58,11 +51,11 @@ function TagWithStats({ tag }: { tag: Tag }) {
     if (stats) return; // Already fetched
     setLoading(true);
     try {
-      const response = await fetch(`/api/tags/${tag.tid}/acceptance-stats/`);
+      const response = await fetch(`/api/people/${personDid}/acceptance-stats/`);
       const data = await response.json();
       setStats(data);
     } catch (error) {
-      console.error('Error fetching tag stats:', error);
+      console.error('Error fetching acceptance stats:', error);
     } finally {
       setLoading(false);
     }
@@ -91,22 +84,15 @@ function TagWithStats({ tag }: { tag: Tag }) {
             <Text size="xs" c="dimmed">Loading...</Text>
           ) : stats ? (
             <>
-              <div>
-                <Text size="xs" fw={500}>Overall</Text>
-                <Text size="xs" c="dimmed">
-                  {stats.overall.percentage}% accepted ({stats.overall.accepted}/{stats.overall.total})
-                </Text>
-              </div>
-              {stats.by_type.length > 0 && (
-                <div>
-                  <Text size="xs" fw={500} mt="xs">By Reach Type</Text>
-                  {stats.by_type.map((typeStat) => (
-                    <Text key={typeStat.type} size="xs" c="dimmed">
-                      {typeStat.type}: {typeStat.percentage.toFixed(1)}% ({typeStat.accepted}/{typeStat.total})
-                    </Text>
-                  ))}
-                </div>
-              )}
+              <Text size="xs" c="dimmed">
+                Accepted: {stats.accepted} ({stats.acceptance_percentage}%)
+              </Text>
+              <Text size="xs" c="dimmed">
+                Rejected: {stats.rejected}
+              </Text>
+              <Text size="xs" c="dimmed">
+                Total: {stats.total}
+              </Text>
             </>
           ) : (
             <Text size="xs" c="dimmed">No data available</Text>
@@ -191,7 +177,7 @@ export default function PeopleTable({
                     {person.tags && person.tags.length > 0 ? (
                       <Group gap="xs">
                         {person.tags.slice(0, 3).map((tag) => (
-                          <TagWithStats key={tag.tid} tag={tag} />
+                          <TagWithStats key={tag.tid} tag={tag} personDid={person.did} />
                         ))}
                         {person.tags.length > 3 && (
                           <Badge variant="dot" size="sm" c="dimmed">

@@ -134,6 +134,42 @@ class PersonViewSet(viewsets.ModelViewSet):
 
         return Response(status=204)
 
+    @action(detail=True, methods=['get'], url_path='acceptance-stats')
+    def acceptance_stats(self, request, pk=None):
+        """
+        GET /api/people/{did}/acceptance-stats/
+        Returns overall acceptance statistics for a specific person
+        """
+        person = self.get_object()
+
+        # Get all volunteer responses for this person
+        responses = VolunteerResponse.objects.filter(did=person.did)
+        print(responses)
+        # Calculate overall stats
+        total_responses = responses.count()
+        if total_responses == 0:
+            return Response({
+                'person_did': person.did,
+                'person_name': person.name,
+                'accepted': 0,
+                'rejected': 0,
+                'total': 0,
+                'acceptance_percentage': 0
+            })
+
+        accepted_responses = responses.filter(response=1).count()
+        rejected_responses = responses.filter(response=0).count()
+        acceptance_percentage = (accepted_responses / total_responses * 100) if total_responses > 0 else 0
+
+        return Response({
+            'person_did': person.did,
+            'person_name': person.name,
+            'accepted': accepted_responses,
+            'rejected': rejected_responses,
+            'total': total_responses,
+            'acceptance_percentage': round(acceptance_percentage, 1)
+        })
+
 
 class GroupViewSet(viewsets.ModelViewSet):
     queryset = Group.objects.all()
@@ -307,11 +343,11 @@ class TagViewSet(viewsets.ModelViewSet):
         print('Tags data:', serializer.data)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['get'], url_path='acceptance-stats')
-    def acceptance_stats(self, request, pk=None):
+    @action(detail=True, methods=['get'], url_path='aggregate-acceptance-stats')
+    def aggregate_acceptance_stats(self, request, pk=None):
         """
-        GET /api/tags/{tid}/acceptance-stats/
-        Returns acceptance statistics for reaches by people with this tag
+        GET /api/tags/{tid}/aggregate-acceptance-stats/
+        Returns aggregate acceptance statistics for ALL people with this tag
         """
         tag = self.get_object()
 
