@@ -1,22 +1,8 @@
 services:
-  server: &server
-    build:
-      context: ./Server/
-      dockerfile: ./Dockerfile.dev
-    image: inhouse_suite_server
-    container_name: inhouse_suite_server
-    volumes:
-      - ./Server/:/app
-      - /app/.venv
-    environment:
-      - RUN_CREATE_DB=1
-    ports:
-      - '8080:8080'
-
   frontend:
     build:
-      context: ./Application/
-      dockerfile: ./Dockerfile.dev
+      context: .
+      dockerfile: ./compose/dev/application/Dockerfile
     image: inhouse_suite_frontend
     container_name: inhouse_suite_frontend
     depends_on:
@@ -29,3 +15,37 @@ services:
       - BACKEND_URL=http://server:8080
     ports:
       - '3030:3030'
+
+  server: &server
+    build:
+      context: .
+      dockerfile: ./compose/dev/server/Dockerfile
+    image: inhouse_suite_server
+    container_name: inhouse_suite_server
+    depends_on:
+      - postgres
+    volumes:
+      - ./Server/:/app
+      - /app/.venv
+    environment:
+      - RUN_CREATE_DB=1
+    env_file:
+      - ./.envs/.dev/.postgres
+    ports:
+      - '8080:8080'
+    command: /start
+
+  postgres:
+    image: postgres:18.1
+    container_name: inhouse_suite_postgres
+    volumes:
+      - dggcrm_dev_postgres_data:/var/lib/postgresql/18/docker
+      - dggcrm_dev_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.dev/.postgres
+    ports:
+      - "5432:5432"
+
+volumes:
+  dggcrm_dev_postgres_data:
+  dggcrm_dev_postgres_data_backups:

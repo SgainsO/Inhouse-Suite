@@ -29,13 +29,13 @@ def populate_with_fake_data(conn, num_people=50, num_groups=5, num_events=15, nu
     real_tags = ['Dev-Software', 'Dev-Art', 'Community Building', 'Attendence']
     for tag in real_tags:
         c.execute(
-            'INSERT INTO Tags (name) VALUES (%s) ON CONFLICT (name) DO NOTHING',
+            'INSERT INTO tags (name) VALUES (%s) ON CONFLICT (name) DO NOTHING',
             (tag,),
         )
     conn.commit()
 
     # Get tag IDs
-    c.execute('SELECT tid FROM Tags')
+    c.execute('SELECT tid FROM tags')
     tag_ids = [row[0] for row in c.fetchall()]
 
     # Generate fake People (using discord-like IDs)
@@ -171,14 +171,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--fake-data",
-        action="store_true",
-        help="Populate the database with fake data",
-    )
-
-    parser.add_argument(
-        "--dsn",
-        default="sqlite:dgg-crm.db",
+        "dsn",
         help="Database DSN (e.g. sqlite:/app/dgg-crm.db or postgresql://user:pass@host:5432/dbname)",
     )
 
@@ -218,9 +211,8 @@ if __name__ == '__main__':
 
     conn = get_db_conn(args.dsn)
 
-    if args.fake_data:
-        print("Populating with fake data...")
-        populate_with_fake_data(conn, num_people=args.num_people, num_groups=args.num_groups, num_events=args.num_events, num_reaches=args.num_reaches)
+    print("Populating with fake data...")
+    populate_with_fake_data(conn, num_people=args.num_people, num_groups=args.num_groups, num_events=args.num_events, num_reaches=args.num_reaches)
 
     # Must close connection at end of program
     conn.close()

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+echo "Starting server..."
+
+# Run migrations before starting server
+python dggcrm/manage.py migrate
+exec python dggcrm/manage.py runserver 0.0.0.0:8080
