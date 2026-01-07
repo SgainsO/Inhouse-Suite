@@ -13,7 +13,7 @@ class Person(models.Model):
     phone = models.CharField(max_length=50, blank=True, null=True)
 
     class Meta:
-        db_table = 'People'
+        db_table = 'people'
         verbose_name = 'Person'
         verbose_name_plural = 'People'
 
@@ -29,7 +29,7 @@ class Group(models.Model):
     name = models.CharField(max_length=255)
 
     class Meta:
-        db_table = 'Groups'
+        db_table = 'groups'
 
     def __str__(self):
         return self.name
@@ -47,7 +47,7 @@ class VolunteerResponse(models.Model):
     ])
 
     class Meta:
-        db_table = 'VolunteerResponses'
+        db_table = 'volunteer_responses'
         unique_together = ('did', 'rid')
 
     def __str__(self):
@@ -71,7 +71,7 @@ class VolunteerInGroup(models.Model):
     ]
 
     class Meta:
-        db_table = 'VolunteerInGroups'
+        db_table = 'volunteer_in_groups'
         unique_together = ('person', 'group')
         verbose_name = 'Volunteer in Group'
         verbose_name_plural = 'Volunteers in Groups'
@@ -98,7 +98,7 @@ class GeneralRole(models.Model):
     ]
 
     class Meta:
-        db_table = 'General_Role'
+        db_table = 'general_role'
         verbose_name = 'General Role'
         verbose_name_plural = 'General Roles'
 
@@ -118,7 +118,7 @@ class Event(models.Model):
     group_id = models.ForeignKey(Group, on_delete=models.CASCADE, db_column='group_id')
 
     class Meta:
-        db_table = 'Event'
+        db_table = 'events'
         verbose_name = 'Event'
         verbose_name_plural = 'Events'
 
@@ -134,7 +134,7 @@ class EventParticipant(models.Model):
     person = models.ForeignKey(Person, on_delete=models.CASCADE, db_column='did')
 
     class Meta:
-        db_table = 'EventParticipants'
+        db_table = 'event_participants'
         unique_together = ('event', 'person')
         verbose_name = 'Event Participant'
         verbose_name_plural = 'Event Participants'
@@ -152,7 +152,7 @@ class Tag(models.Model):
     name = models.CharField(max_length=255, unique=True)
 
     class Meta:
-        db_table = 'Tags'
+        db_table = 'tags'
 
     def __str__(self):
         return self.name
@@ -166,7 +166,7 @@ class AssignedTag(models.Model):
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE, db_column='tid')
 
     class Meta:
-        db_table = 'AssignedTags'
+        db_table = 'assigned_tags'
         unique_together = ('person', 'tag')
         verbose_name = 'Assigned Tag'
         verbose_name_plural = 'Assigned Tags'
@@ -199,7 +199,7 @@ class Reach(models.Model):
     ]
 
     class Meta:
-        db_table = 'Reaches'
+        db_table = "reaches"
         verbose_name = 'Reach'
         verbose_name_plural = 'Reaches'
 

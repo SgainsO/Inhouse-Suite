@@ -33,3 +33,41 @@ docker compose -f docker-compose.dev.yaml down -v
 docker compose -f docker-compose.dev.yaml build --no-cache
 docker compose -f docker-compose.dev.yaml up
 ```
+
+## Populate DB with fake data
+
+There are two ways to run the script:
+
+```bash
+# Directly
+python fake/main.py postgres://tiny:password@localhost:5432/dggcrm
+
+# With Docker
+docker compose -f docker-compose.dev.yaml run --rm server python fake/main.py postgres://tiny:password@postgres:5432/dggcrm
+```
+
+This will populate the database with a fake data for testing purposes. You may consider examining the help menu for more direction:
+
+```bash
+python fake/main.py --help
+```
+
+## Database Schema changes
+
+When making a DB change to `models.py`, you must create and then deploy a new migration.
+
+```bash
+docker compose -f docker-compose.dev.yaml run --rm server python dggcrm/manage.py makemigrations
+
+docker compose -f docker-compose.dev.yaml run --rm server python dggcrm/manage.py migrate
+```
+
+You may neeed to define the specific module you want to migrate. e.g:
+
+```bash
+docker compose -f docker-compose.dev.yaml run --rm server python dggcrm/manage.py makemigrations base
+
+docker compose -f docker-compose.dev.yaml run --rm server python dggcrm/manage.py migrate base
+```
+
+Before you merge a PR with DB changes, make sure that you combine your migrations into a single file by deleting the new migration files, and recreating them.
