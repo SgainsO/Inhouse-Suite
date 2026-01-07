@@ -16,7 +16,7 @@ import {
   Box
 } from '@mantine/core';
 import { useState, useEffect } from 'react';
-import ReachesTable, { type Reach } from '@/app/components/ReachesTable';
+import ReachesTable, { type Reach } from '@/app/components/tables/ReachesTable';
 import VolunteerSearch from '@/app/components/VolunteerSearch';
 import { statusLabels, typeLabels } from '@/app/components/Labels';
 

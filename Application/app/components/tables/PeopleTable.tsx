@@ -26,11 +26,12 @@ export interface Tag {
 interface PeopleTableProps {
   people: Person[];
   loading?: boolean;
-  onRowClick?: (person: Person) => void;
   showTitle?: boolean;
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  changeToPersonModal?: React.Dispatch<React.SetStateAction<'table' | 'modal'>>;
+  changePersonDetails?: React.Dispatch<React.SetStateAction<Person | null>>;
 }
 
 interface AcceptanceStats {
@@ -46,6 +47,7 @@ function TagWithStats({ tag, personDid }: { tag: Tag; personDid: string }) {
   const [stats, setStats] = useState<AcceptanceStats | null>(null);
   const [loading, setLoading] = useState(false);
   const [opened, setOpened] = useState(false);
+
 
   const fetchStats = async () => {
     if (stats) return; // Already fetched
@@ -106,11 +108,12 @@ function TagWithStats({ tag, personDid }: { tag: Tag; personDid: string }) {
 export default function PeopleTable({
   people,
   loading = false,
-  onRowClick,
   showTitle = true,
   currentPage = 1,
   totalPages = 1,
-  onPageChange
+  onPageChange,
+  changeToPersonModal,
+  changePersonDetails,
 }: PeopleTableProps) {
   const formatContact = (email: string | null, phone: string | null) => {
     const parts = [];
@@ -119,12 +122,23 @@ export default function PeopleTable({
     return parts.length > 0 ? parts.join(' • ') : 'No contact info';
   };
 
+  const [hoveredDetails, changeHoveredDetails] = useState<Person | null>(null);
+
+  const changeControl = (person: Person | null) => {
+    console.log("Person: ", person?.name)
+    if (changePersonDetails && changeToPersonModal) {
+      console.log("Changing person details");
+      changePersonDetails(person);
+      changeToPersonModal("modal");
+    }
+  };
+
   return (
     <Paper p="md" withBorder style={{ position: 'relative', minHeight: '400px' }}>
       <LoadingOverlay visible={loading} />
       <Stack gap="md">
         {showTitle && <Title order={4}>People ({people.length})</Title>}
-        <Table highlightOnHover>
+        <Table highlightOnHover >
           <Table.Thead>
             <Table.Tr>
               <Table.Th>Name</Table.Th>
@@ -145,10 +159,10 @@ export default function PeopleTable({
               people.map((person) => (
                 <Table.Tr
                   key={person.did}
-                  onClick={() => onRowClick?.(person)}
-                  style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+                  onClick={() => changeControl(person)}
+                  style={{ cursor: onclick ? 'pointer' : 'default' }}
                 >
-                  <Table.Td>{person.name}</Table.Td>
+                  <Table.Td onClick={ () => changeHoveredDetails(person)}>{person.name}</Table.Td>
                   <Table.Td>
                     <Text size="sm" c="dimmed">{person.did}</Text>
                   </Table.Td>

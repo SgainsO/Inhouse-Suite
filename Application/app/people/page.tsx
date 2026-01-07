@@ -15,7 +15,8 @@ import {
 import { IconPlus, IconFileUpload, IconSearch } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { useForm } from '@mantine/form';
-import PeopleTable, { type Person, type Group as PersonGroup, type Tag } from '@/app/components/PeopleTable';
+import PeopleTable, { type Person, type Group as PersonGroup, type Tag } from '@/app/components/tables/PeopleTable';
+import PersonModPage from '../components/person-mod';
 import './page.css';
 
 export default function PeoplePage() {
@@ -113,11 +114,6 @@ export default function PeoplePage() {
     setSelectedGroup('all');
     setSelectedTag('all');
     setCurrentPage(1);
-  };
-
-  const handleRowClick = (person: Person) => {
-    // TODO: Navigate to person detail page or show modal
-    console.log('Clicked person:', person);
   };
 
   const handleAddPerson = () => {
@@ -240,10 +236,9 @@ export default function PeoplePage() {
         </Paper>
 
         {/* People Table */}
-        <PeopleTable
+        <PersonModPage
           people={people}
           loading={loading}
-          onRowClick={handleRowClick}
           showTitle={false}
           currentPage={currentPage}
           totalPages={totalPages}

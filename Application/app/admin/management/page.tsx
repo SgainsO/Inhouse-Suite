@@ -18,10 +18,10 @@ import {
 import { IconPlus, IconBuilding, IconUserCog, IconSettings, IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { useForm } from '@mantine/form';
-import OrganizationsTable, { type Organization } from '@/app/components/OrganizationsTable';
-import OrganizationMembersTable, { type GroupMember } from '@/app/components/OrganizationMembersTable';
-import RolesTable, { type PersonWithRole } from '@/app/components/RolesTable';
-import PlaceholderSection from '@/app/components/PlaceholderSection';
+import OrganizationsTable, { type Organization } from '@/app/components/tables/OrganizationsTable';
+import OrganizationMembersTable, { type GroupMember } from '@/app/components/tables/OrganizationMembersTable';
+import RolesTable, { type PersonWithRole } from '@/app/components/tables/RolesTable';
+import PlaceholderSection from '@/app/components/tables/PlaceholderSection';
 import { useAdminHandlers } from './handlers';
 
 interface Person {

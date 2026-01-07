@@ -1,7 +1,7 @@
 'use client';
 
 import { Table, Badge, Stack, Title, LoadingOverlay, Paper } from '@mantine/core';
-import { statusLabels, typeLabels } from './Labels';
+import { statusLabels, typeLabels } from '../Labels';
 
 export interface Reach {
   rid: number;
