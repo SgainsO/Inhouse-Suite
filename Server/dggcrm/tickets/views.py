@@ -15,8 +15,8 @@ class TicketViewSet(viewsets.ModelViewSet):
     serializer_class = TicketSerializer
     filter_backends = [filters.OrderingFilter, filters.SearchFilter]
     search_fields = ['id'] # TODO: Add more fields
-    ordering_fields = ['created_at', 'modified_at', 'ticket_status', 'ticket_type']
-    ordering = ['-created_at']
+    ordering_fields = ['priority', 'created_at', 'modified_at', 'ticket_status', 'ticket_type', ]
+    ordering = ['priority', '-created_at']
 
     def get_queryset(self):
         queryset = super().get_queryset()
