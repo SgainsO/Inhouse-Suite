@@ -4,6 +4,7 @@ import { Table, Badge, Stack, Title, LoadingOverlay, Paper, Group, Text, Paginat
 import { useState } from 'react';
 
 export interface Person {
+  id: number;
   discord_id: string;
   full_name: string;
   email: string | null;
@@ -12,13 +13,13 @@ export interface Person {
 }
 
 export interface Group {
-  gid: number;
+  id: number;
   name: string;
   access_level?: number;
 }
 
 export interface Tag {
-  tid: number;
+  id: number;
   name: string;
 }
 
@@ -157,7 +158,7 @@ export default function PeopleTable({
                     {person.tags && person.tags.length > 0 ? (
                       <Group gap="xs">
                         {person.tags.slice(0, 3).map((tag) => (
-                          <TagWithStats key={tag.tid} tag={tag} personDid={person.discord_id} />
+                          <TagWithStats key={tag.id} tag={tag} personDid={person.discord_id} />
                         ))}
                         {person.tags.length > 3 && (
                           <Badge variant="dot" size="sm" c="dimmed">
