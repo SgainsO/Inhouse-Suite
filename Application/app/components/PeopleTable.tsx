@@ -4,11 +4,10 @@ import { Table, Badge, Stack, Title, LoadingOverlay, Paper, Group, Text, Paginat
 import { useState } from 'react';
 
 export interface Person {
-  did: string;
-  name: string;
+  discord_id: string;
+  full_name: string;
   email: string | null;
   phone: string | null;
-  groups?: Group[];
   tags?: Tag[];
 }
 
@@ -130,7 +129,6 @@ export default function PeopleTable({
               <Table.Th>Name</Table.Th>
               <Table.Th>Discord ID</Table.Th>
               <Table.Th>Contact</Table.Th>
-              <Table.Th>Groups</Table.Th>
               <Table.Th>Tags</Table.Th>
             </Table.Tr>
           </Table.Thead>
@@ -144,40 +142,22 @@ export default function PeopleTable({
             ) : (
               people.map((person) => (
                 <Table.Tr
-                  key={person.did}
+                  key={person.discord_id}
                   onClick={() => onRowClick?.(person)}
                   style={{ cursor: onRowClick ? 'pointer' : 'default' }}
                 >
-                  <Table.Td>{person.name}</Table.Td>
+                  <Table.Td>{person.full_name}</Table.Td>
                   <Table.Td>
-                    <Text size="sm" c="dimmed">{person.did}</Text>
+                    <Text size="sm" c="dimmed">{person.discord_id}</Text>
                   </Table.Td>
                   <Table.Td>
                     <Text size="sm">{formatContact(person.email, person.phone)}</Text>
                   </Table.Td>
                   <Table.Td>
-                    {person.groups && person.groups.length > 0 ? (
-                      <Group gap="xs">
-                        {person.groups.slice(0, 3).map((group) => (
-                          <Badge key={group.gid} variant="light" size="sm">
-                            {group.name}
-                          </Badge>
-                        ))}
-                        {person.groups.length > 3 && (
-                          <Badge variant="light" size="sm" c="dimmed">
-                            +{person.groups.length - 3}
-                          </Badge>
-                        )}
-                      </Group>
-                    ) : (
-                      <Text size="sm" c="dimmed">No groups</Text>
-                    )}
-                  </Table.Td>
-                  <Table.Td>
                     {person.tags && person.tags.length > 0 ? (
                       <Group gap="xs">
                         {person.tags.slice(0, 3).map((tag) => (
-                          <TagWithStats key={tag.tid} tag={tag} personDid={person.did} />
+                          <TagWithStats key={tag.tid} tag={tag} personDid={person.discord_id} />
                         ))}
                         {person.tags.length > 3 && (
                           <Badge variant="dot" size="sm" c="dimmed">

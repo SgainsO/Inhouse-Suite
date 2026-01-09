@@ -4,13 +4,15 @@ import { Table, Badge, Stack, Title, LoadingOverlay, Paper } from '@mantine/core
 import { statusLabels, typeLabels } from './Labels';
 
 export interface Reach {
-  rid: number;
+  id: number;
   status: number;
-  assigned: string | null;
+  contact: string | null;
   title: string;
   description: string;
-  type: string;
+  ticket_type: string;
   priority: number;
+  created_at: string;
+  modified_at: string;
 }
 
 interface ReachesTableProps {
@@ -63,14 +65,14 @@ export default function ReachesTable({
           <Table.Tbody>
             {reaches.map((reach) => (
               <Table.Tr
-                key={reach.rid}
+                key={reach.id}
                 onClick={() => onRowClick?.(reach)}
                 style={{ cursor: onRowClick ? 'pointer' : 'default' }}
               >
-                <Table.Td>{reach.rid}</Table.Td>
+                <Table.Td>{reach.id}</Table.Td>
                 <Table.Td>{reach.title}</Table.Td>
                 <Table.Td>
-                  <Badge variant="light">{typeLabels[reach.type] || reach.type}</Badge>
+                  <Badge variant="light">{typeLabels[reach.ticket_type] || reach.ticket_type}</Badge>
                 </Table.Td>
                 <Table.Td>
                   <Badge color={getPriorityColor(reach.priority)}>
@@ -82,7 +84,7 @@ export default function ReachesTable({
                     {statusLabels[reach.status]}
                   </Badge>
                 </Table.Td>
-                <Table.Td>{reach.assigned || 'Unassigned'}</Table.Td>
+                <Table.Td>{reach.contact || 'Unassigned'}</Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>

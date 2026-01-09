@@ -13,8 +13,10 @@ import {
   Button,
   Timeline,
   Divider,
-  Box
+  Box,
+  ActionIcon
 } from '@mantine/core';
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import ReachesTable, { type Reach } from '@/app/components/ReachesTable';
 import VolunteerSearch from '@/app/components/VolunteerSearch';
@@ -27,6 +29,9 @@ export default function CallsPage() {
   const [status, setStatus] = useState('in-progress');
   const [priority, setPriority] = useState('p3');
   const [assignee, setAssignee] = useState('admin');
+  const [nextUrl, setNextUrl] = useState<string | null>(null);
+  const [previousUrl, setPreviousUrl] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState(0);
 
   const statuses = ['all', 'open', 'in-progress', 'blocked', 'completed'];
 
@@ -34,13 +39,18 @@ export default function CallsPage() {
     fetchReaches();
   }, []);
 
-  const fetchReaches = async () => {
+  const fetchReaches = async (url?: string) => {
     try {
       setLoading(true);
-      const response = await fetch('/api/reaches/priority/');
+      const fetchUrl = url || '/api/tickets/';
+      const response = await fetch(fetchUrl);
       console.log('Fetch response:', response);
       const data = await response.json();
-      setReaches(data);
+      console.log('Fetched reaches data:', data);
+      setReaches(data.results);
+      setTotalCount(data.count);
+      setNextUrl(data.next);
+      setPreviousUrl(data.previous);
     } catch (error) {
       console.error('Error fetching reaches:', error);
     } finally {
@@ -60,7 +70,7 @@ export default function CallsPage() {
     if (!selectedReach) return;
 
     try {
-      const response = await fetch(`/api/reaches/${selectedReach.rid}/`, {
+      const response = await fetch(`/api/calls/${selectedReach.id}/`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +88,7 @@ export default function CallsPage() {
 
         // Update the reach in the reaches list
         setReaches(reaches.map(r =>
-          r.rid === updatedReach.rid ? updatedReach : r
+          r.id === updatedReach.id ? updatedReach : r
         ));
       } else {
         const error = await response.json();
@@ -175,11 +185,38 @@ export default function CallsPage() {
 
             {/* Reaches Table or Call Instructions */}
             {!selectedReach ? (
-              <ReachesTable
-                reaches={reaches}
-                loading={loading}
-                onRowClick={handleRowClick}
-              />
+              <>
+                <ReachesTable
+                  reaches={reaches}
+                  loading={loading}
+                  onRowClick={handleRowClick}
+                />
+
+                {/* Pagination and count */}
+                <Paper p="sm" withBorder>
+                  <Group justify="space-between">
+                    <span>{totalCount} {totalCount === 1 ? 'ticket' : 'tickets'} found</span>
+                    <Group gap="xs">
+                      <ActionIcon
+                        variant="filled"
+                        disabled={!previousUrl}
+                        onClick={() => previousUrl && fetchReaches(previousUrl)}
+                        aria-label="Previous page"
+                      >
+                        <IconChevronLeft size={18} />
+                      </ActionIcon>
+                      <ActionIcon
+                        variant="filled"
+                        disabled={!nextUrl}
+                        onClick={() => nextUrl && fetchReaches(nextUrl)}
+                        aria-label="Next page"
+                      >
+                        <IconChevronRight size={18} />
+                      </ActionIcon>
+                    </Group>
+                  </Group>
+                </Paper>
+              </>
             ) : (
               <Paper p="md" withBorder style={{ position: 'relative', minHeight: '400px' }}>
                 // Show call instructions for selected reach
@@ -254,17 +291,17 @@ export default function CallsPage() {
                   <Divider />
                   <Box>
                     <Text size="sm" c="dimmed">Type</Text>
-                    <Text size="sm" mt={4}>{typeLabels[selectedReach.type] || selectedReach.type}</Text>
+                    <Text size="sm" mt={4}>{typeLabels[selectedReach.ticket_type] || selectedReach.type}</Text>
                   </Box>
                   <Divider />
                   <Box>
                     <Text size="sm" c="dimmed">Assigned To</Text>
-                    <Text size="sm" mt={4}>{selectedReach.assigned || 'Unassigned'}</Text>
+                    <Text size="sm" mt={4}>{selectedReach.contact || 'Unassigned'}</Text>
                   </Box>
                   <Divider />
                   <Box>
                     <Text size="sm" c="dimmed">Reach ID</Text>
-                    <Text size="sm" mt={4}>#{selectedReach.rid}</Text>
+                    <Text size="sm" mt={4}>#{selectedReach.id}</Text>
                   </Box>
                 </Stack>
               </Paper>
@@ -293,7 +330,7 @@ export default function CallsPage() {
               </Paper>
 
               {/* Volunteer Search and Responses */}
-              <VolunteerSearch reachId={selectedReach.rid} />
+              <VolunteerSearch reachId={selectedReach.id} />
             </Stack>
           </Grid.Col>
         )}

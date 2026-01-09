@@ -10,9 +10,10 @@ import {
   Select,
   Stack,
   Modal,
-  MultiSelect
+  MultiSelect,
+  ActionIcon
 } from '@mantine/core';
-import { IconPlus, IconFileUpload, IconSearch } from '@tabler/icons-react';
+import { IconPlus, IconFileUpload, IconSearch, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 import { useState, useEffect } from 'react';
 import { useForm } from '@mantine/form';
 import PeopleTable, { type Person, type Group as PersonGroup, type Tag } from '@/app/components/PeopleTable';
@@ -24,27 +25,25 @@ export default function PeoplePage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string | null>('all');
   const [selectedTag, setSelectedTag] = useState<string | null>('all');
-  const [groups, setGroups] = useState<PersonGroup[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [nextUrl, setNextUrl] = useState<string | null>(null);
+  const [previousUrl, setPreviousUrl] = useState<string | null>(null);
   const [totalCount, setTotalCount] = useState(0);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const itemsPerPage = 20;
 
   const form = useForm({
     initialValues: {
-      did: '',
-      name: '',
+      discord_id: '',
+      full_name: '',
       email: '',
       phone: '',
       tags: []
     },
     validate: {
-      did: (value) => (!value ? 'Discord ID is required' : null),
-      name: (value) => (!value ? 'Name is required' : null),
+      discord_id: (value) => (!value ? 'Discord ID is required' : null),
+      full_name: (value) => (!value ? 'Full name is required' : null),
       email: (value) => (value && !/^\S+@\S+$/.test(value) ? 'Invalid email' : null)
     }
   });
@@ -56,51 +55,55 @@ export default function PeoplePage() {
     fetchGroupsAndTags();
   }, []);
 
-  // Fetch people whenever filters or page changes
+  // Fetch people whenever filters change (reset to first page)
   useEffect(() => {
     fetchPeople();
-  }, [searchQuery, selectedGroup, selectedTag, currentPage]);
+  }, [searchQuery, selectedGroup, selectedTag]);
 
   const fetchGroupsAndTags = async () => {
     try {
-      const [groupsRes, tagsRes] = await Promise.all([
-        fetch('/api/groups/'),
+      const [tagsRes] = await Promise.all([
         fetch('/api/tags/')
       ]);
 
-      console.log('Groups response:', groupsRes);
       console.log('Tags response:', tagsRes);
 
-      const groupsData = await groupsRes.json();
       const tagsData = await tagsRes.json();
+      console.log('Tags data:', tagsData);
 
-      setGroups(groupsData);
-      setTags(tagsData);
+      // Handle both array and object responses
+      const tagsArray = Array.isArray(tagsData) ? tagsData : (tagsData.results || []);
+      setTags(tagsArray);
     } catch (error) {
       console.error('Error fetching groups and tags:', error);
+      setTags([]); // Ensure tags is always an array
     }
   };
 
-  const fetchPeople = async () => {
+  const fetchPeople = async (url?: string) => {
     try {
       setLoading(true);
 
-      // Build query parameters
-      const params = new URLSearchParams({
-        page: currentPage.toString(),
-        page_size: itemsPerPage.toString()
-      });
+      let fetchUrl = url;
 
-      if (searchQuery) params.append('search', searchQuery);
-      if (selectedGroup && selectedGroup !== 'all') params.append('group', selectedGroup);
-      if (selectedTag && selectedTag !== 'all') params.append('tag', selectedTag);
+      // If no URL provided, build the initial query
+      if (!fetchUrl) {
+        const params = new URLSearchParams();
+        if (searchQuery) params.append('q', searchQuery);
+        if (selectedTag && selectedTag !== 'all') params.append('tag', selectedTag);
+        fetchUrl = `/api/contacts/search/?${params}`;
+      }
 
-      const response = await fetch(`/api/people/with-relations/?${params}`);
+      console.log("Fetch URL:", fetchUrl);
+
+      const response = await fetch(fetchUrl);
       const data = await response.json();
 
+      console.log('Fetched people data:', data);
       setPeople(data.results);
       setTotalCount(data.count);
-      setTotalPages(data.total_pages);
+      setNextUrl(data.next);
+      setPreviousUrl(data.previous);
     } catch (error) {
       console.error('Error fetching people:', error);
     } finally {
@@ -112,7 +115,6 @@ export default function PeoplePage() {
     setSearchQuery('');
     setSelectedGroup('all');
     setSelectedTag('all');
-    setCurrentPage(1);
   };
 
   const handleRowClick = (person: Person) => {
@@ -165,28 +167,18 @@ export default function PeoplePage() {
     console.log('Upload CSV clicked');
   };
 
-  // Prepare dropdown options
-  const groupOptions = [
-    { value: 'all', label: 'Any' },
-    ...groups.map(g => ({ value: g.gid.toString(), label: g.name }))
-  ];
 
   const tagOptions = [
     { value: 'all', label: 'Any' },
-    ...tags.map(t => ({ value: t.tid.toString(), label: t.name }))
+    ...tags.map(t => ({ value: t.id.toString(), label: t.name }))
   ];
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   return (
     <Container size="xl" py="xl">
       <Stack gap="md">
         {/* Header with title and action buttons */}
         <Group justify="space-between">
-          <Title order={2}>People</Title>
+          <Title order={2}>Contacts</Title>
           <Group gap="sm">
             <Button
               leftSection={<IconPlus size={16} />}
@@ -216,14 +208,7 @@ export default function PeoplePage() {
                 leftSection={<IconSearch size={16} />}
                 style={{ flex: 1 }}
               />
-              <Select
-                label="Group"
-                placeholder="Select group"
-                value={selectedGroup}
-                onChange={setSelectedGroup}
-                data={groupOptions}
-                style={{ minWidth: 200 }}
-              />
+
               <Select
                 label="Tag"
                 placeholder="Select tag"
@@ -245,15 +230,30 @@ export default function PeoplePage() {
           loading={loading}
           onRowClick={handleRowClick}
           showTitle={false}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
         />
 
-        {/* Total count */}
+        {/* Pagination and count */}
         <Paper p="sm" withBorder>
           <Group justify="space-between">
             <span>{totalCount} {totalCount === 1 ? 'person' : 'people'} found</span>
+            <Group gap="xs">
+              <ActionIcon
+                variant="filled"
+                disabled={!previousUrl}
+                onClick={() => previousUrl && fetchPeople(previousUrl)}
+                aria-label="Previous page"
+              >
+                <IconChevronLeft size={18} />
+              </ActionIcon>
+              <ActionIcon
+                variant="filled"
+                disabled={!nextUrl}
+                onClick={() => nextUrl && fetchPeople(nextUrl)}
+                aria-label="Next page"
+              >
+                <IconChevronRight size={18} />
+              </ActionIcon>
+            </Group>
           </Group>
         </Paper>
       </Stack>

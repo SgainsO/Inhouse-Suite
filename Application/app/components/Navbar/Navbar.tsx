@@ -21,9 +21,8 @@ import { useEffect, useState } from 'react';
 const notAdminData = [
   { link: '/home', label: 'Home', icon: IconHome },
   { link: '/calls', label: 'Calls', icon: IconPhone },
-  { link: '/people', label: 'People', icon: IconUsers },
+  { link: '/contacts', label: 'Contacts', icon: IconUsers },
   { link: '/events', label: 'Events', icon: IconCalendarEvent },
-  { link: '/groups', label: 'Groups', icon: IconBuilding },
 /*  { link: '/profile', label: 'Profile', icon: IconUser }, */
 ];
 
